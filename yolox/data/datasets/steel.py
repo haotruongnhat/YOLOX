@@ -224,7 +224,6 @@ class SteelDetection(Dataset):
 
     def load_image(self, index):
         img_id = self.ids[index]
-        print(img_id)
         img = cv2.imread(self._imgpath % img_id, cv2.IMREAD_COLOR)
         assert img is not None
 
@@ -255,7 +254,6 @@ class SteelDetection(Dataset):
     def __getitem__(self, index):
         img, target, img_info, img_id = self.pull_item(index)
         
-        print(img_info, img_id)
         if self.preproc is not None:
             img, target = self.preproc(img, target, self.input_dim)
 
