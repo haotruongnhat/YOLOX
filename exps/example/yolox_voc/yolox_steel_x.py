@@ -27,6 +27,12 @@ class Exp(MyExp):
 
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 
+    def get_model(self):
+        from yolox.utils import freeze_module
+        model = super().get_model()
+        freeze_module(model.backbone.backbone)
+        return model
+
     def get_data_loader(self, batch_size, is_distributed, no_aug=False, cache_img=False):
         from yolox.data import (
             SteelDetection,
