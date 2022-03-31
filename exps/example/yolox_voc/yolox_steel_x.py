@@ -22,8 +22,10 @@ class Exp(MyExp):
         self.hsv_prob = 1.0
         self.flip_prob = 0.5
         self.enable_mixup = False
-        self.max_epoch = 10
         self.input_size = (640, 640)
+
+        self.max_epoch = 10
+        self.data_num_workers = 2
 
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 
