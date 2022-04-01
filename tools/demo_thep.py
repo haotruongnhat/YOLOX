@@ -16,6 +16,9 @@ from yolox.data.datasets import STEEL_CLASSES
 from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess, vis
 
+from tools.output_to_xml import xml_transform
+from tqdm import tqdm
+
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
 
@@ -30,6 +33,11 @@ def make_parser():
     parser.add_argument(
         "--path", default="./assets/dog.jpg", help="path to images or video"
     )
+
+    parser.add_argument(
+        "--output", default="", help="path where to save"
+    )
+
     parser.add_argument("--camid", type=int, default=0, help="webcam demo camera id")
     parser.add_argument(
         "--save_result",
@@ -162,7 +170,7 @@ class Predictor(object):
                 outputs, self.num_classes, self.confthre,
                 self.nmsthre, class_agnostic=True
             )
-            logger.info("Infer time: {:.4f}s".format(time.time() - t0))
+            # logger.info("Infer time: {:.4f}s".format(time.time() - t0))
         return outputs, img_info
 
     def visual(self, output, img_info, cls_conf=0.35):
@@ -190,17 +198,42 @@ def image_demo(predictor, vis_folder, path, current_time, save_result):
     else:
         files = [path]
     files.sort()
-    for image_name in files:
+    for image_name in tqdm(files):
         outputs, img_info = predictor.inference(image_name)
         result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
         if save_result:
             save_folder = os.path.join(
-                vis_folder, time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
+                vis_folder
             )
-            os.makedirs(save_folder, exist_ok=True)
-            save_file_name = os.path.join(save_folder, os.path.basename(image_name))
-            logger.info("Saving detection result in {}".format(save_file_name))
-            cv2.imwrite(save_file_name, result_image)
+
+            save_image_folder = os.path.join(
+                save_folder, "LabelledImages"
+            )
+
+            save_ori_image_folder = os.path.join(
+                save_folder, "JPEGImages"
+            )
+            save_label_folder = os.path.join(
+                save_folder, "Annotations"
+            )
+
+            os.makedirs(save_image_folder, exist_ok=True)
+            os.makedirs(save_label_folder, exist_ok=True)
+            os.makedirs(save_ori_image_folder, exist_ok=True)
+
+            save_file_name = os.path.join(save_image_folder, os.path.basename(image_name))
+            save_ori_file_name = os.path.join(save_ori_image_folder, os.path.basename(image_name))
+
+            stem = os.path.basename(image_name).split(".")[0]
+            label_name = stem + ".xml"
+            save_label_name = os.path.join(save_label_folder, label_name)
+
+            # logger.info("Saving detection result in {}".format(save_file_name))
+            # cv2.imwrite(save_file_name, result_image)
+            # cv2.imwrite(save_ori_file_name, img_info["raw_img"])
+
+            xml_transform(outputs[0].cpu(), img_info, save_label_name)
+
         ch = cv2.waitKey(0)
         if ch == 27 or ch == ord("q") or ch == ord("Q"):
             break
@@ -215,7 +248,17 @@ def imageflow_demo(predictor, vis_folder, current_time, args):
         save_folder = os.path.join(
             vis_folder, time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
         )
-        os.makedirs(save_folder, exist_ok=True)
+
+        save_image_folder = os.path.join(
+            save_folder, "images"
+        )
+        save_label_folder = os.path.join(
+            save_folder, "generated_labels"
+        )
+
+        os.makedirs(save_image_folder, exist_ok=True)
+        os.makedirs(save_label_folder, exist_ok=True)
+
         if args.demo == "video":
             save_path = os.path.join(save_folder, os.path.basename(args.path))
         else:
@@ -251,6 +294,10 @@ def main(exp, args):
     vis_folder = None
     if args.save_result:
         vis_folder = os.path.join(file_name, "vis_res")
+
+        if args.output:
+          vis_folder = args.output
+
         os.makedirs(vis_folder, exist_ok=True)
 
     if args.trt:
