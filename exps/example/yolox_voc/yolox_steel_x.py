@@ -24,7 +24,7 @@ class Exp(MyExp):
         self.enable_mixup = False
         self.input_size = (640, 640)
 
-        self.max_epoch = 10
+        self.max_epoch = 100
         self.data_num_workers = 2
 
         # No mosiac
