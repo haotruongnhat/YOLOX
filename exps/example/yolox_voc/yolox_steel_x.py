@@ -27,6 +27,9 @@ class Exp(MyExp):
         self.max_epoch = 10
         self.data_num_workers = 2
 
+        # No mosiac
+        self.no_aug_epochs = 0
+        
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 
     def get_model(self):
