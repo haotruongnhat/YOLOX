@@ -82,9 +82,7 @@ def voc_eval(
         os.mkdir(cachedir)
     cachefile = os.path.join(cachedir, "annots.pkl")
     # read list of images
-    with open(imagesetfile, "r") as f:
-        lines = f.readlines()
-    imagenames = [x.strip() for x in lines]
+    imagenames = imagesetfile
 
     if not os.path.isfile(cachefile):
         # load annots

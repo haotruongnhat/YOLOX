@@ -83,7 +83,8 @@ class AnnotationTransform(object):
 def getImagesInDir(dir_path):
     image_list = []
     for filename in glob.glob(dir_path + '/*.jpg'):
-        image_list.append(filename)
+        img_name = filename.split("/")[-1].split(".")[0]
+        image_list.append(img_name)
 
     return image_list
 
@@ -109,7 +110,7 @@ class SteelDetection(Dataset):
     def __init__(
         self,
         data_dir,
-        image_sets=["lab"],
+        image_sets=["lab", "lab_test"], # First one is train, second one is eval
         img_size=(416, 416),
         preproc=None,
         target_transform=AnnotationTransform(),
@@ -127,12 +128,15 @@ class SteelDetection(Dataset):
         self._imgpath = os.path.join("%s", "JPEGImages", "%s.jpg")
         self._classes = STEEL_CLASSES
         self.ids = list()
-        for name in image_sets:
-            rootpath = os.path.join(self.root, name)
-            for line in getImagesInDir(os.path.join(rootpath, "JPEGImages")):
-                img_name = line.split("/")[-1].split(".")[0]
-
-                self.ids.append((rootpath, img_name))
+        
+        self._train_set = image_sets[0]
+        self._eval_set = image_sets[1]
+        
+        name = image_sets[0]
+        self._image_set = name
+        rootpath = os.path.join(self.root, name)
+        for line in getImagesInDir(os.path.join(rootpath, "JPEGImages")):
+            self.ids.append((rootpath, line))
 
         self.annotations = self._load_coco_annotations()
         self.imgs = None
@@ -285,7 +289,8 @@ class SteelDetection(Dataset):
 
     def _get_voc_results_file_template(self):
         filename = "comp4_det_test" + "_{:s}.txt"
-        filedir = os.path.join(self.root, "results", "VOC" + self._year, "Main")
+        filedir = os.path.join(self.root, "results", self._eval_set)
+
         if not os.path.exists(filedir):
             os.makedirs(filedir)
         path = os.path.join(filedir, filename)
@@ -317,18 +322,17 @@ class SteelDetection(Dataset):
                         )
 
     def _do_python_eval(self, output_dir="output", iou=0.5):
-        rootpath = os.path.join(self.root, "VOC" + self._year)
-        name = self.image_set[0][1]
+        rootpath = os.path.join(self.root, self._image_set[1])
         annopath = os.path.join(rootpath, "Annotations", "{:s}.xml")
-        imagesetfile = os.path.join(rootpath, "ImageSets", "Main", name + ".txt")
+        imagesetfile = getImagesInDir(os.path.join(rootpath, "JPEGImages"))
         cachedir = os.path.join(
-            self.root, "annotations_cache", "VOC" + self._year, name
+            self.root, "annotations_cache", self._image_set[1]
         )
         if not os.path.exists(cachedir):
             os.makedirs(cachedir)
         aps = []
         # The PASCAL VOC metric changed in 2010
-        use_07_metric = True if int(self._year) < 2010 else False
+        use_07_metric = False
         print("Eval IoU : {:.2f}".format(iou))
         if output_dir is not None and not os.path.isdir(output_dir):
             os.mkdir(output_dir)
