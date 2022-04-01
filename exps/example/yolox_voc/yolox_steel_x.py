@@ -51,7 +51,7 @@ class Exp(MyExp):
 
         dataset = SteelDetection(
             data_dir=get_yolox_datadir(),
-            image_sets=["lab"],
+            image_sets=["lab", "lab_test"],
             img_size=self.input_size,
             preproc=TrainTransform(
                 max_labels=100,
