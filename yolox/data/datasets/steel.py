@@ -129,9 +129,6 @@ class SteelDetection(Dataset):
         self._classes = STEEL_CLASSES
         self.ids = list()
         
-        self._train_set = image_sets[0]
-        self._eval_set = image_sets[1]
-        
         name = image_sets[0]
         self._image_set = name
         rootpath = os.path.join(self.root, name)
@@ -289,7 +286,7 @@ class SteelDetection(Dataset):
 
     def _get_voc_results_file_template(self):
         filename = "comp4_det_test" + "_{:s}.txt"
-        filedir = os.path.join(self.root, "results", self._eval_set)
+        filedir = os.path.join(self.root, "results", self._image_set)
 
         if not os.path.exists(filedir):
             os.makedirs(filedir)
@@ -322,11 +319,11 @@ class SteelDetection(Dataset):
                         )
 
     def _do_python_eval(self, output_dir="output", iou=0.5):
-        rootpath = os.path.join(self.root, self._image_set[1])
+        rootpath = os.path.join(self.root, self._image_set)
         annopath = os.path.join(rootpath, "Annotations", "{:s}.xml")
         imagesetfile = getImagesInDir(os.path.join(rootpath, "JPEGImages"))
         cachedir = os.path.join(
-            self.root, "annotations_cache", self._image_set[1]
+            self.root, "annotations_cache", self._image_set
         )
         if not os.path.exists(cachedir):
             os.makedirs(cachedir)

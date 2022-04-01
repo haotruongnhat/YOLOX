@@ -7,6 +7,8 @@ import torch.distributed as dist
 from yolox.data import get_yolox_datadir
 from yolox.exp import Exp as MyExp
 
+train_set = ["lab"]
+eval_set = ["lab_test"]
 
 class Exp(MyExp):
     def __init__(self):
@@ -51,7 +53,7 @@ class Exp(MyExp):
 
         dataset = SteelDetection(
             data_dir=get_yolox_datadir(),
-            image_sets=["lab", "lab_test"],
+            image_sets=train_set,
             img_size=self.input_size,
             preproc=TrainTransform(
                 max_labels=100,
@@ -91,7 +93,7 @@ class Exp(MyExp):
 
         valdataset = SteelDetection(
             data_dir=get_yolox_datadir(),
-            image_sets=["lab_test"],
+            image_sets=eval_set,
             img_size=self.test_size,
             preproc=ValTransform(legacy=legacy),
         )
