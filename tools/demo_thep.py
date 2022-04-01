@@ -201,7 +201,7 @@ def image_demo(predictor, vis_folder, path, current_time, save_result):
     for image_name in tqdm(files):
         outputs, img_info = predictor.inference(image_name)
         result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
-        if save_result:
+        if save_result and outputs[0] is not None:
             save_folder = os.path.join(
                 vis_folder
             )

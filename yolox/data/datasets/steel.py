@@ -80,9 +80,9 @@ class AnnotationTransform(object):
 
         return res, img_info
 
-def getImagesInDir(dir_path):
+def getFilesInDir(dir_path, extension="jpg"):
     image_list = []
-    for filename in glob.glob(dir_path + '/*.jpg'):
+    for filename in glob.glob(dir_path + '/*.' + extension):
         img_name = filename.split("/")[-1].split(".")[0]
         image_list.append(img_name)
 
@@ -110,7 +110,7 @@ class SteelDetection(Dataset):
     def __init__(
         self,
         data_dir,
-        image_sets=["lab", "lab_test"], # First one is train, second one is eval
+        image_sets=["lab", "lab_test"],
         img_size=(416, 416),
         preproc=None,
         target_transform=AnnotationTransform(),
@@ -129,11 +129,12 @@ class SteelDetection(Dataset):
         self._classes = STEEL_CLASSES
         self.ids = list()
         
-        name = image_sets[0]
-        self._image_set = name
-        rootpath = os.path.join(self.root, name)
-        for line in getImagesInDir(os.path.join(rootpath, "JPEGImages")):
-            self.ids.append((rootpath, line))
+        self._image_set = image_sets[0]
+        
+        for name in image_sets:
+          rootpath = os.path.join(self.root, name)
+          for line in getFilesInDir(os.path.join(rootpath, "Annotations"), "xml"):
+              self.ids.append((rootpath, line))
 
         self.annotations = self._load_coco_annotations()
         self.imgs = None
@@ -321,7 +322,7 @@ class SteelDetection(Dataset):
     def _do_python_eval(self, output_dir="output", iou=0.5):
         rootpath = os.path.join(self.root, self._image_set)
         annopath = os.path.join(rootpath, "Annotations", "{:s}.xml")
-        imagesetfile = getImagesInDir(os.path.join(rootpath, "JPEGImages"))
+        imagesetfile = getFilesInDir(os.path.join(rootpath, "Annotations"), "xml")
         cachedir = os.path.join(
             self.root, "annotations_cache", self._image_set
         )
