@@ -217,9 +217,9 @@ def image_demo(predictor, vis_folder, path, current_time, save_result):
                 save_folder, "Annotations"
             )
 
-            os.makedirs(save_image_folder, exist_ok=True)
             os.makedirs(save_label_folder, exist_ok=True)
-            os.makedirs(save_ori_image_folder, exist_ok=True)
+            # os.makedirs(save_ori_image_folder, exist_ok=True)
+            # os.makedirs(save_image_folder, exist_ok=True)
 
             save_file_name = os.path.join(save_image_folder, os.path.basename(image_name))
             save_ori_file_name = os.path.join(save_ori_image_folder, os.path.basename(image_name))
