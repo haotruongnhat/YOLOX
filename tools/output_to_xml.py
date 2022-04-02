@@ -37,9 +37,11 @@ def xml_transform(output, img_info, output_file, database_name = "field"):
     
     # os.makedirs(join(root, 'outputs'), exist_ok=True)
     # outpath = join(root, 'outputs', '%s.xml')
-
-    height, width, channels = img_info["raw_img"].shape # pega tamanhos e canais das images
-
+    if "raw_img" in img_info.keys(): 
+      height, width, channels = img_info["raw_img"].shape # pega tamanhos e canais das images
+    else:
+      height, width, channels = img_info["height"], img_info["width"], img_info["channels"]
+      
     node_root = Element('annotation')
     node_folder = SubElement(node_root, 'folder')
     node_folder.text = 'VOC2007'
@@ -66,9 +68,9 @@ def xml_transform(output, img_info, output_file, database_name = "field"):
     node_segmented.text = '0'
 
     ratio = img_info["ratio"]
-    img = img_info["raw_img"]
+    # img = img_info["raw_img"]
     if output is None:
-        return img
+        return None
     output = output.numpy()
 
     bboxes = np.round(output[:, 0:4] / ratio).astype(np.int)

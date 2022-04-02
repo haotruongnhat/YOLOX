@@ -149,6 +149,47 @@ class Predictor(object):
             self.model(x)
             self.model = model_trt
 
+    def batch_inference(self, imgs):
+        image_batch = []
+        img_info = {"id": 0}
+        
+        for img in imgs:
+            img = cv2.imread(img)
+            
+            height, width, channels = img.shape
+
+            img_info["height"] = height
+            img_info["width"] = width
+            img_info["channels"] = channels
+
+            ratio = min(self.test_size[0] / img.shape[0], self.test_size[1] / img.shape[1])
+            img_info["ratio"] = ratio
+
+            img, _ = self.preproc(img, None, self.test_size)
+            img = torch.from_numpy(img).unsqueeze(0)
+            img = img.float()
+            
+            image_batch.append(img)
+        
+        image_batch = torch.cat(image_batch, 0)
+        
+        if self.device == "gpu":
+            image_batch = image_batch.cuda()
+            if self.fp16:
+                image_batch = image_batch.half()  # to FP16
+
+        with torch.no_grad():
+            t0 = time.time()
+            outputs = self.model(image_batch)
+            if self.decoder is not None:
+                outputs = self.decoder(outputs, dtype=outputs.type())
+            outputs = postprocess(
+                outputs, self.num_classes, self.confthre,
+                self.nmsthre, class_agnostic=True
+            )
+            # logger.info("Infer time: {:.4f}s".format(time.time() - t0))
+        return outputs, img_info
+
     def inference(self, img):
         img_info = {"id": 0}
         if isinstance(img, str):
@@ -304,6 +345,30 @@ def imageflow_demo(predictor, vis_folder, current_time, args):
         else:
             break
 
+def batch_image_demo(predictor, vis_folder, path):
+    if os.path.isdir(path):
+        files = get_image_list(path)
+    else:
+        files = [path]
+    files.sort()
+    
+    save_folder =vis_folder
+
+    save_label_folder = os.path.join(
+        save_folder, "Annotations"
+    )
+    os.makedirs(save_label_folder, exist_ok=True)
+
+    outputs, img_info = predictor.batch_inference(files)
+    logger.info("Batch inference size {} - Done".format(outputs.shape[0]))
+    for index, image_name in enumerate(files):
+        img_info["file_name"] = os.path.basename(image_name)
+        
+        stem = os.path.basename(image_name).split(".")[0]
+        label_name = stem + ".xml"
+        save_label_name = os.path.join(save_label_folder, label_name)
+
+        xml_transform(outputs[index].cpu(), img_info, save_label_name)
 
 def main(exp, args):
     if not args.experiment_name:
@@ -378,7 +443,19 @@ def main(exp, args):
             logger.info("Inference on: {}".format(path))
 
             image_demo(predictor, vis_folder, path, current_time, args.save_result, args.save_label_image, args.save_ori_image)
-      
+    elif args.demo == "batch_image":
+        sub_directory = args.sub_directory.split(",")
+        for sub_dir in sub_directory:
+            
+            vis_folder = os.path.join(args.parent_output, sub_dir) 
+            os.makedirs(vis_folder, exist_ok=True)
+            
+            path = os.path.join(args.parent_path, sub_dir) 
+            
+            logger.info("Inference on: {}".format(path))
+
+            batch_image_demo(predictor, vis_folder, path)
+
     elif args.demo == "video" or args.demo == "webcam":
         imageflow_demo(predictor, vis_folder, current_time, args)
 
