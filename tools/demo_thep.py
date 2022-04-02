@@ -235,8 +235,12 @@ def image_demo(predictor, vis_folder, path, current_time, save_result, save_labe
         outputs, img_info = predictor.inference(image_name)
         result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
         if save_result and outputs[0] is not None:
-            save_file_name = os.path.join(save_image_folder, os.path.basename(image_name))
-            save_ori_file_name = os.path.join(save_ori_image_folder, os.path.basename(image_name))
+            if save_label_img:
+                save_file_name = os.path.join(save_image_folder, os.path.basename(image_name))
+
+            if save_original_img:
+                save_ori_file_name = os.path.join(save_ori_image_folder, os.path.basename(image_name))
+
 
             stem = os.path.basename(image_name).split(".")[0]
             label_name = stem + ".xml"
@@ -371,6 +375,8 @@ def main(exp, args):
             
             path = os.path.join(args.parent_path, sub_dir) 
             
+            logger.info("Inference on: {}".format(path))
+
             image_demo(predictor, vis_folder, path, current_time, args.save_result, args.save_label_image, args.save_ori_image)
       
     elif args.demo == "video" or args.demo == "webcam":
