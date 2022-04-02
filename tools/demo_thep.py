@@ -31,18 +31,30 @@ def make_parser():
     parser.add_argument("-n", "--name", type=str, default=None, help="model name")
 
     parser.add_argument(
-        "--path", default="./assets/dog.jpg", help="path to images or video"
+        "--parent_path", default="./assets/dog.jpg", help="path to images or video"
     )
 
     parser.add_argument(
-        "--output", default="", help="path where to save"
+        "--parent_output", default="", help="path where to save"
     )
 
+    parser.add_argument(
+        "--sub_directory", default="", help="path where to save in string with ',' delimiter"
+    )
+    
     parser.add_argument("--camid", type=int, default=0, help="webcam demo camera id")
     parser.add_argument(
         "--save_result",
         action="store_true",
         help="whether to save the inference result of image/video",
+    )
+    parser.add_argument(
+        "--save_label_image",
+        action="store_true"
+    )
+    parser.add_argument(
+        "--save_ori_image",
+        action="store_true"
     )
 
     # exp file
@@ -192,35 +204,37 @@ class Predictor(object):
         return vis_res
 
 
-def image_demo(predictor, vis_folder, path, current_time, save_result):
+def image_demo(predictor, vis_folder, path, current_time, save_result, save_label_img, save_original_img):
     if os.path.isdir(path):
         files = get_image_list(path)
     else:
         files = [path]
     files.sort()
+    
+    save_folder =vis_folder
+
+    save_label_folder = os.path.join(
+        save_folder, "Annotations"
+    )
+    os.makedirs(save_label_folder, exist_ok=True)
+
+
+    if save_label_img:
+        save_image_folder = os.path.join(
+            save_folder, "LabelledImages"
+        )
+        os.makedirs(save_image_folder, exist_ok=True)
+
+    if save_original_img:
+        save_ori_image_folder = os.path.join(
+            save_folder, "JPEGImages"
+        )
+        os.makedirs(save_ori_image_folder, exist_ok=True)
+    
     for image_name in tqdm(files):
         outputs, img_info = predictor.inference(image_name)
         result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
         if save_result and outputs[0] is not None:
-            save_folder = os.path.join(
-                vis_folder
-            )
-
-            save_image_folder = os.path.join(
-                save_folder, "LabelledImages"
-            )
-
-            save_ori_image_folder = os.path.join(
-                save_folder, "JPEGImages"
-            )
-            save_label_folder = os.path.join(
-                save_folder, "Annotations"
-            )
-
-            os.makedirs(save_label_folder, exist_ok=True)
-            # os.makedirs(save_ori_image_folder, exist_ok=True)
-            # os.makedirs(save_image_folder, exist_ok=True)
-
             save_file_name = os.path.join(save_image_folder, os.path.basename(image_name))
             save_ori_file_name = os.path.join(save_ori_image_folder, os.path.basename(image_name))
 
@@ -229,8 +243,11 @@ def image_demo(predictor, vis_folder, path, current_time, save_result):
             save_label_name = os.path.join(save_label_folder, label_name)
 
             # logger.info("Saving detection result in {}".format(save_file_name))
-            # cv2.imwrite(save_file_name, result_image)
-            # cv2.imwrite(save_ori_file_name, img_info["raw_img"])
+            if save_label_img:
+                cv2.imwrite(save_file_name, result_image)
+
+            if save_original_img:
+                cv2.imwrite(save_ori_file_name, img_info["raw_img"])
 
             xml_transform(outputs[0].cpu(), img_info, save_label_name)
 
@@ -291,15 +308,6 @@ def main(exp, args):
     file_name = os.path.join(exp.output_dir, args.experiment_name)
     os.makedirs(file_name, exist_ok=True)
 
-    vis_folder = None
-    if args.save_result:
-        vis_folder = os.path.join(file_name, "vis_res")
-
-        if args.output:
-          vis_folder = args.output
-
-        os.makedirs(vis_folder, exist_ok=True)
-
     if args.trt:
         args.device = "gpu"
 
@@ -355,7 +363,16 @@ def main(exp, args):
     )
     current_time = time.localtime()
     if args.demo == "image":
-        image_demo(predictor, vis_folder, args.path, current_time, args.save_result)
+        sub_directory = args.sub_directory.split(",")
+        for sub_dir in sub_directory:
+            
+            vis_folder = os.path.join(args.parent_output, sub_dir) 
+            os.makedirs(vis_folder, exist_ok=True)
+            
+            path = os.path.join(args.parent_path, sub_dir) 
+            
+            image_demo(predictor, vis_folder, path, current_time, args.save_result, args.save_label_image, args.save_ori_image)
+      
     elif args.demo == "video" or args.demo == "webcam":
         imageflow_demo(predictor, vis_folder, current_time, args)
 
