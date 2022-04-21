@@ -74,7 +74,9 @@ def make_parser():
     )
     parser.add_argument("--conf", default=0.3, type=float, help="test conf")
     parser.add_argument("--nms", default=0.3, type=float, help="test nms threshold")
-    parser.add_argument("--tsize", default=None, type=int, help="test img size")
+    parser.add_argument("--height", default=None, type=int, help="test img size")
+    parser.add_argument("--width", default=None, type=int, help="test img size")
+
     parser.add_argument(
         "--fp16",
         dest="fp16",
@@ -386,8 +388,8 @@ def main(exp, args):
         exp.test_conf = args.conf
     if args.nms is not None:
         exp.nmsthre = args.nms
-    if args.tsize is not None:
-        exp.test_size = (args.tsize, args.tsize)
+    if args.height is not None:
+        exp.test_size = (args.height, args.width)
 
     model = exp.get_model()
     logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))

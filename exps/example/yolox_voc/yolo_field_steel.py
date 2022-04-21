@@ -7,8 +7,8 @@ import torch.distributed as dist
 from yolox.data import get_yolox_datadir
 from yolox.exp import Exp as MyExp
 
-train_set = ["29032022", "30032022"]
-eval_set = ["30032022"]
+train_set = ["mixed"]
+eval_set = ["01042022"]
 
 class Exp(MyExp):
     def __init__(self):
@@ -21,16 +21,28 @@ class Exp(MyExp):
         # ---------- transform config ------------ #
         self.mosaic_prob = 0.0
         self.mixup_prob = 0.0
-        self.hsv_prob = 1.0
+        self.hsv_prob = 0.0
         self.flip_prob = 0.5
         self.enable_mixup = False
-        self.input_size = (640, 640)
+        self.input_size = (640, 800)
 
-        self.max_epoch = 100
+        self.degrees = 0.0
+        self.translate = 0.0
+        self.scale = (0.1, 2)
+        self.mosaic_scale = (0.8, 1.6)
+        self.shear = 0.0
+        self.perspective = 0.0
+        self.enable_mixup = False
+
+        self.max_epoch = 300
         self.data_num_workers = 2
 
         # No mosiac
         self.no_aug_epochs = 0
+
+        self.nmsthre = 0.3
+        self.test_conf = 0.25
+        self.test_size = (640, 800)
         
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 
