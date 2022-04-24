@@ -28,7 +28,8 @@ class Exp(MyExp):
 
         self.degrees = 20.0
         self.translate = 10.0
-        self.scale = (0.1, 2)
+        self.multiscale_range = 2
+        
         self.mosaic_scale = (0.8, 1.6)
         self.shear = 0.0
         self.perspective = 0.0
