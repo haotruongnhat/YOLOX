@@ -24,7 +24,7 @@ def unconvert(class_id, width, height, x, y, w, h):
 
 
 ## path root folder
-ROOT = "/home/haotruong/VSTech/data/output1"
+ROOT = "/home/haotruong/VSTech/data_24_04"
 
 
 ## converts coco into xml 
@@ -32,9 +32,8 @@ def xml_transform(root, classes):
     l = list(Path(root).glob("*.jpg"))
     ids=[x.stem for x in l]   
 
-    annopath = join(root, '%s.txt')
-    imgpath = join(root, '%s.jpg')
-
+    annopath = join(root, 'labels', '%s.txt')
+    imgpath = join(root, 'images', '%s.jpg')
 
     out_anno_path = join(root, 'Annotations')
     out_image_path = join(root, 'JPEGImages')

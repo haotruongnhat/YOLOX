@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from http import server
 import socket
 import numpy as np
 from infer_utils import preproc as preprocess
@@ -9,8 +10,10 @@ from socket_chunk import chunk_send, chunk_recv
 import json
 import time
 import cv2
+import os
+from pathlib import Path
 
-def onnx_inference(session, origin_img):
+def onnx_inference(session, origin_img, nms):
     input_shape = tuple(map(int, "640, 800".split(',')))
     img, ratio = preprocess(origin_img, input_shape)
 
@@ -27,7 +30,7 @@ def onnx_inference(session, origin_img):
     boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2]/2.
     boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2.
     boxes_xyxy /= ratio
-    dets = multiclass_nms(boxes_xyxy, scores, nms_thr=0.45, score_thr=0.1)
+    dets = multiclass_nms(boxes_xyxy, scores, nms_thr=nms, score_thr=0.1)
     if dets is not None:
         final_boxes, final_scores, final_cls_inds = dets[:, :4], dets[:, 4], dets[:, 5]
         return final_boxes, final_scores
@@ -40,12 +43,24 @@ if __name__ == "__main__":
     
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         ip = "127.0.0.1"
-        server_addr = (ip, 50000)
-        client_addr = (ip, 50001)
+        server_addr = (ip, args["server_port"])
+        print("Server address: ", server_addr)
+
+        client_addr = (ip, args["client_port"])
+        print("Client address: ", client_addr)
+
         s.bind(server_addr) 
         
-        print("Load ONNX file")
-        session = onnxruntime.InferenceSession(args["model_path"])
+        model_path = None
+        findall_onnx = list(Path(".").glob("*.onnx"))
+        if len(findall_onnx) > 0:
+            model_path = str(findall_onnx[0])
+        else:
+            model_path = args["model_path"]
+
+        session = onnxruntime.InferenceSession(model_path)
+        print("Load ONNX file:", model_path)
+
         print("Running on {}".format(onnxruntime.get_device()))
 
         print("Start loop")
@@ -59,14 +74,14 @@ if __name__ == "__main__":
             
             ## Inference
             start_time = time.time()
-            final_boxes, final_scores = onnx_inference(session, arr)
+            final_boxes, final_scores = onnx_inference(session, arr, args["nms"])
             end_time = time.time()
             print("Time elapsed: {} ms".format((end_time - start_time)*1000))
 
             result_dict = {}
             
-            result_dict["boxes"] = final_boxes
-            result_dict["scores"] = final_scores
+            result_dict["boxes"] = final_boxes.tolist()
+            result_dict["scores"] = final_scores.tolist()
             print("Results: {}".format(result_dict))
 
             ## Send back
