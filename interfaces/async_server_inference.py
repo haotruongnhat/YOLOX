@@ -13,8 +13,8 @@ import cv2
 import os
 from pathlib import Path
 
-def onnx_inference(session, origin_img, nms):
-    input_shape = tuple(map(int, "640, 800".split(',')))
+def onnx_inference(session, origin_img, size_str, nms):
+    input_shape = tuple(map(int, size_str.split(',')))
     img, ratio = preprocess(origin_img, input_shape)
 
     ort_inputs = {session.get_inputs()[0].name: img[None, :, :, :]}
@@ -74,7 +74,7 @@ if __name__ == "__main__":
             
             ## Inference
             start_time = time.time()
-            final_boxes, final_scores = onnx_inference(session, arr, args["nms"])
+            final_boxes, final_scores = onnx_inference(session, arr, args["size"], args["nms"])
             end_time = time.time()
             print("Time elapsed: {} ms".format((end_time - start_time)*1000))
 

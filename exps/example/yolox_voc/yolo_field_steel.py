@@ -24,7 +24,7 @@ class Exp(MyExp):
         self.hsv_prob = 0.2
         self.flip_prob = 0.5
         self.enable_mixup = False
-        self.input_size = (640, 800)
+        self.input_size = (960, 1280)
 
         self.degrees = 20.0
         self.translate = 10.0
@@ -42,8 +42,8 @@ class Exp(MyExp):
         self.no_aug_epochs = 0
 
         self.nmsthre = 0.2
-        self.test_conf = 0.25
-        self.test_size = (640, 800)
+        self.test_conf = 0.1
+        self.test_size = (960, 1280)
         
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
 

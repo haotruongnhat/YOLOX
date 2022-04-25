@@ -2,5 +2,6 @@
     "model_path": "dem_thep.onnx",
     "server_port": 50000,
     "client_port": 50002,
+    "size": "960, 1280",
     "nms": 0.2
 }
